@@ -5,11 +5,21 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
+
+    private String TAG = getClass().getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +36,43 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Observable.just(null)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .map(new Func1<Object, Object>() {
+                            @Override
+                            public Object call(Object o) {
+                                Log.e(TAG, "map1: " + Thread.currentThread().getName());
+                                return null;
+                            }
+                        })
+                        .observeOn(Schedulers.io())
+                        .map(new Func1<Object, Object>() {
+                            @Override
+                            public Object call(Object o) {
+                                Log.e(TAG, "map2: " + Thread.currentThread().getName());
+                                return null;
+                            }
+                        })
+                        .doOnSubscribe(new Action0() {
+                            @Override
+                            public void call() {
+                                Log.e(TAG, "onSubscribe: " + Thread.currentThread().getName());
+                            }
+                        })
+                        .subscribe(new Action1<Object>() {
+                            @Override
+                            public void call(Object o) {
+                                Log.e(TAG, "subscribe: " + Thread.currentThread().getName());
+                            }
+                        });
+            }
+        }).start();
+
     }
 
     @Override
