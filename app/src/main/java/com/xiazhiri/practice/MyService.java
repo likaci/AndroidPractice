@@ -3,10 +3,17 @@ package com.xiazhiri.practice;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.os.RemoteException;
 
 import com.xiazhiri.practice.util.L;
 
 public class MyService extends Service {
+    IMyAidlInterface.Stub binder = new IMyAidlInterface.Stub() {
+        @Override
+        public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString) throws RemoteException {
+            L.e("Wow");
+        }
+    };
 
     public MyService() {
     }
@@ -19,19 +26,14 @@ public class MyService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        L.e();
+        L.e(this.hashCode() + "");
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        L.e();
-        return null;
+        L.e(this.hashCode() + "");
+        return binder;
     }
 
     @Override

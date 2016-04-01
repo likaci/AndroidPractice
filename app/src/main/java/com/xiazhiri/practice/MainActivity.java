@@ -62,7 +62,9 @@ public class MainActivity extends AppCompatActivity {
                 stopService(intent);
                 break;
             case R.id.bind:
-                intent = new Intent(this, MyService.class);
+                //intent = new Intent(this, MyService.class);
+                intent = new Intent("com.xiazhiri.practice.IMyAidlInterface");
+                intent.setPackage("com.xiazhiri.practice");
                 bindService(intent, serviceConnection, BIND_AUTO_CREATE);
                 break;
             case R.id.unbind:
