@@ -25,8 +25,12 @@
 
     </android.support.design.widget.AppBarLayout>
 
-
-
+    <com.xiazhiri.practice.CustomView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:background="#000"
+        android:id="@+id/customView"
+        />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
