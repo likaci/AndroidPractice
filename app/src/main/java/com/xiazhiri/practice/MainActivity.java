@@ -42,37 +42,51 @@ public class MainActivity extends AppCompatActivity {
 
     private void test() {
         L.e("----------");
-        Observable.concat(
-                Observable.just("disk")
-                        .map(new Func1<String, String>() {
-                            @Override
-                            public String call(String s) {
-                                return new Random().nextBoolean() ? s : "diskCacheError";
-                            }
-                        }),
-                Observable.just("network")
-                        .map(new Func1<String, String>() {
-                            @Override
-                            public String call(String s) {
-                                return new Random().nextBoolean() ? s : "netWorkError";
-                            }
-                        }))
-                .first(new Func1<String, Boolean>() {
+        Observable.just("disk")
+                .map(new Func1<String, String>() {
                     @Override
-                    public Boolean call(String s) {
-                        if (s.contains("Error")) {
-                            L.e("Filter " + s);
-                        }
-                        return !s.contains("Error");
+                    public String call(String s) {
+                        return new Random().nextBoolean() ? s : "diskCacheError";
                     }
                 })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .retry(new Func2<Integer, Throwable, Boolean>() {
+                .map(new Func1<String, String>() {
                     @Override
-                    public Boolean call(Integer integer, Throwable throwable) {
-                        L.e("Retry " + integer);
-                        return integer < 2;
+                    public String call(String s) {
+                        if (s.contains("Error")) {
+                            L.e("Filter1 " + s);
+                            throw new RuntimeException();
+                        }
+                        return s;
+                    }
+                })
+                .onErrorResumeNext(new Func1<Throwable, Observable<? extends String>>() {
+                    @Override
+                    public Observable<? extends String> call(Throwable throwable) {
+                        return  Observable.just("network")
+                                .map(new Func1<String, String>() {
+                                    @Override
+                                    public String call(String s) {
+                                        return new Random().nextBoolean() ? s : "netWorkError";
+                                    }
+
+                                })
+                                .map(new Func1<String, String>() {
+                                    @Override
+                                    public String call(String s) {
+                                        if (s.contains("Error")) {
+                                            L.e("Filter2 " + s);
+                                            throw new RuntimeException();
+                                        }
+                                        return s;
+                                    }
+                                })
+                                .retry(new Func2<Integer, Throwable, Boolean>() {
+                                    @Override
+                                    public Boolean call(Integer integer, Throwable throwable) {
+                                        L.e("Retry " + integer);
+                                        return integer < 2;
+                                    }
+                                });
                     }
                 })
                 .subscribe(new Action1<String>() {
@@ -86,6 +100,5 @@ public class MainActivity extends AppCompatActivity {
                         L.e("Error after Retry");
                     }
                 });
-
     }
 }
