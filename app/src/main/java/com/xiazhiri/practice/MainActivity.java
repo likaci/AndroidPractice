@@ -8,7 +8,15 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.xiazhiri.practice.util.L;
-import com.xiazhiri.practice.util.ThreadUtils;
+
+import java.util.Random;
+
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,38 +33,59 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+                test();
             }
         });
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ThreadUtils.runOnUiThread(new Runnable() {
+
+    }
+
+    private void test() {
+        L.e("----------");
+        Observable.concat(
+                Observable.just("disk")
+                        .map(new Func1<String, String>() {
+                            @Override
+                            public String call(String s) {
+                                return new Random().nextBoolean() ? s : "diskCacheError";
+                            }
+                        }),
+                Observable.just("network")
+                        .map(new Func1<String, String>() {
+                            @Override
+                            public String call(String s) {
+                                return new Random().nextBoolean() ? s : "netWorkError";
+                            }
+                        }))
+                .first(new Func1<String, Boolean>() {
                     @Override
-                    public void run() {
-                        L.e("1");
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                    public Boolean call(String s) {
+                        if (s.contains("Error")) {
+                            L.e("Filter " + s);
                         }
+                        return !s.contains("Error");
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .retry(new Func2<Integer, Throwable, Boolean>() {
+                    @Override
+                    public Boolean call(Integer integer, Throwable throwable) {
+                        L.e("Retry " + integer);
+                        return integer < 2;
+                    }
+                })
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        L.e("Result " + s);
+                    }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        L.e("Error after Retry");
                     }
                 });
-                L.e("1.1");
-                ThreadUtils.runOnUiThreadBlocking(new Runnable() {
-                    @Override
-                    public void run() {
-                        L.e("2");
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                L.e("2.1");
-            }
-        }).start();
 
     }
 }
