@@ -8,12 +8,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.xiazhiri.practice.util.L;
-
-import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func1;
-import rx.functions.Func3;
-import rx.schedulers.Schedulers;
+import com.xiazhiri.practice.util.ThreadUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,39 +19,6 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Observable.just("network")
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .map(new Func1<String, String>() {
-                    @Override
-                    public String call(String s) {
-                        L.e(s + " Step1");
-                        return s;
-                    }
-                })
-                .map(new Func1<String, String>() {
-                    @Override
-                    public String call(final String s) {
-                        return Observable.zip(Observable.just(s), Observable.just(s), Observable.just(s), new Func3<String, String, String, String>() {
-                            @Override
-                            public String call(String s1, String s2, String s3) {
-                                L.e(s1 + s2 + s3 + " Step2");
-                                return s1 + s2 + s3;
-                            }
-                        }).toBlocking().first();
-                    }
-
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .map(new Func1<String, String>() {
-                    @Override
-                    public String call(String s) {
-                        L.e(s + " Step3");
-                        return s;
-                    }
-                })
-                .subscribe();
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,6 +28,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-    }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ThreadUtils.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        L.e("1");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                L.e("1.1");
+                ThreadUtils.runOnUiThreadBlocking(new Runnable() {
+                    @Override
+                    public void run() {
+                        L.e("2");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                L.e("2.1");
+            }
+        }).start();
 
+    }
 }
